@@ -1,9 +1,10 @@
 const apiDocs = {
-  baseEndpoint: "http://localhost:3000/api",
+  baseEndpoint: "http://monarca-fullstack-zx2j51-513751-157-254-174-74.traefik.me",
   endpoints: [
     {
       id: "register-user",
       title: "Register User",
+      sdkMethod: "registerUser",
       method: "POST",
       endpoint: "/users/register",
       description: "Register a new user.",
@@ -15,21 +16,31 @@ const apiDocs = {
         { name: "password", type: "string", required: true },
         { name: "repeatPassword", type: "string", required: true }
       ],
+      validations: [
+        "Email valido en mail",
+        "password y repeatPassword deben coincidir",
+        "usuario y mail deben ser unicos"
+      ],
       requestExample: {
-        usuario: "paulo",
-        mail: "paulo@mail.com",
-        password: "123456",
-        repeatPassword: "123456"
+        usuario: "string",
+        mail: "string",
+        password: "string",
+        repeatPassword: "string"
       },
       responseExample: {
         success: true,
-        message: "User registered successfully"
+        message: "User registered successfully",
+        data: {
+          idUsuario: 1,
+          usuario: "string",
+          mail: "string"
+        }
       }
     },
-
     {
       id: "login-user",
       title: "Login User",
+      sdkMethod: "login",
       method: "POST",
       endpoint: "/auth/login",
       description: "Login user and return JWT token.",
@@ -39,84 +50,50 @@ const apiDocs = {
         { name: "mail", type: "string", required: true },
         { name: "password", type: "string", required: true }
       ],
+      validations: ["Email valido en mail"],
       requestExample: {
-        mail: "paulo@mail.com",
-        password: "123456"
+        mail: "string",
+        password: "string"
       },
       responseExample: {
         success: true,
-        token: "jwt-token-example"
-      }
-    },
-
-    {
-      id: "get-user-by-id",
-      title: "Get User By ID",
-      method: "GET",
-      endpoint: "/users/:idUsuario",
-      description: "Get user by ID.",
-      protected: true,
-      payloadType: "Params",
-      fields: [
-        { name: "idUsuario", type: "number", required: true }
-      ],
-      requestExample: {
-        idUsuario: 1
-      },
-      responseExample: {
-        success: true,
-        message: "User fetched successfully",
+        message: "Login successful",
         data: {
-          idUsuario: 1,
-          usuario: "paulo",
-          mail: "paulo@mail.com"
+          token: "jwt",
+          user: {
+            idUsuario: 1,
+            usuario: "string",
+            mail: "string"
+          }
         }
       }
     },
-
-    {
-      id: "delete-user",
-      title: "Delete User",
-      method: "DELETE",
-      endpoint: "/users/:idUsuario",
-      description: "Delete user.",
-      protected: true,
-      payloadType: "Params",
-      fields: [
-        { name: "idUsuario", type: "number", required: true }
-      ],
-      requestExample: {
-        idUsuario: 1
-      },
-      responseExample: {
-        success: true,
-        message: "User deleted successfully"
-      }
-    },
-
     {
       id: "request-reset",
-      title: "Request Reset Password",
+      title: "Request Password Reset",
+      sdkMethod: "requestPasswordReset",
       method: "POST",
       endpoint: "/auth/request-reset",
       description: "Request password reset link.",
       protected: false,
       payloadType: "Request Body",
-      fields: [
-        { name: "mail", type: "string", required: true }
-      ],
+      fields: [{ name: "mail", type: "string", required: true }],
+      validations: ["Email valido en mail"],
       requestExample: {
-        mail: "paulo@mail.com"
+        mail: "string"
       },
       responseExample: {
         success: true,
-        message: "Password reset link sent"
+        message: "Password reset token generated",
+        data: {
+          idUsuario: 1
+        }
       }
     },
-
     {
       id: "reset-password",
       title: "Reset Password",
+      sdkMethod: "resetPassword",
       method: "POST",
       endpoint: "/auth/reset-password",
       description: "Reset user password.",
@@ -128,21 +105,78 @@ const apiDocs = {
         { name: "newPassword", type: "string", required: true },
         { name: "repeatPassword", type: "string", required: true }
       ],
+      validations: [
+        "idUsuario debe ser entero positivo",
+        "newPassword y repeatPassword deben coincidir"
+      ],
       requestExample: {
         idUsuario: 1,
-        token: "reset-token-example",
-        newPassword: "new-pass-123",
-        repeatPassword: "new-pass-123"
+        token: "string",
+        newPassword: "string",
+        repeatPassword: "string"
       },
       responseExample: {
         success: true,
-        message: "Password updated successfully"
+        message: "Password reset successfully",
+        data: {
+          idUsuario: 1,
+          usuario: "string",
+          mail: "string"
+        }
       }
     },
-
+    {
+      id: "get-user-by-id",
+      title: "Get User By ID",
+      sdkMethod: "getUserById",
+      method: "GET",
+      endpoint: "/users/:idUsuario",
+      description: "Get user by ID.",
+      protected: true,
+      payloadType: "Params",
+      fields: [{ name: "idUsuario", type: "number", required: true }],
+      validations: ["idUsuario debe ser entero positivo"],
+      requestExample: {
+        idUsuario: 1
+      },
+      responseExample: {
+        success: true,
+        message: "User fetched successfully",
+        data: {
+          idUsuario: 1,
+          usuario: "string",
+          mail: "string"
+        }
+      }
+    },
+    {
+      id: "delete-user",
+      title: "Delete User",
+      sdkMethod: "deleteUser",
+      method: "DELETE",
+      endpoint: "/users/:idUsuario",
+      description: "Delete user.",
+      protected: true,
+      payloadType: "Params",
+      fields: [{ name: "idUsuario", type: "number", required: true }],
+      validations: ["idUsuario debe ser entero positivo"],
+      requestExample: {
+        idUsuario: 1
+      },
+      responseExample: {
+        success: true,
+        message: "User deleted successfully",
+        data: {
+          idUsuario: 1,
+          usuario: "string",
+          mail: "string"
+        }
+      }
+    },
     {
       id: "create-product",
       title: "Create Product",
+      sdkMethod: "createProduct",
       method: "POST",
       endpoint: "/products",
       description: "Create product.",
@@ -152,39 +186,49 @@ const apiDocs = {
         { name: "nombreProducto", type: "string", required: true },
         { name: "descripcion", type: "string", required: true }
       ],
+      validations: [],
       requestExample: {
-        nombreProducto: "Alfajor Chocolate",
-        descripcion: "Alfajor relleno de dulce de leche"
+        nombreProducto: "string",
+        descripcion: "string"
       },
       responseExample: {
         success: true,
-        message: "Product created successfully"
+        message: "Product created successfully",
+        data: {
+          idProducto: 1,
+          nombreProducto: "string",
+          descripcion: "string"
+        }
       }
     },
-
     {
       id: "delete-product",
       title: "Delete Product",
+      sdkMethod: "deleteProduct",
       method: "DELETE",
       endpoint: "/products/:idProducto",
       description: "Delete product.",
       protected: true,
       payloadType: "Params",
-      fields: [
-        { name: "idProducto", type: "number", required: true }
-      ],
+      fields: [{ name: "idProducto", type: "number", required: true }],
+      validations: ["idProducto debe ser entero positivo"],
       requestExample: {
-        idProducto: 2
+        idProducto: 1
       },
       responseExample: {
         success: true,
-        message: "Product deleted successfully"
+        message: "Product deleted successfully",
+        data: {
+          idProducto: 1,
+          nombreProducto: "string",
+          descripcion: "string"
+        }
       }
     },
-
     {
       id: "create-insumo",
       title: "Create Insumo",
+      sdkMethod: "createInsumo",
       method: "POST",
       endpoint: "/insumos",
       description: "Create insumo.",
@@ -194,39 +238,49 @@ const apiDocs = {
         { name: "nombreInsumo", type: "string", required: true },
         { name: "descripcion", type: "string", required: true }
       ],
+      validations: [],
       requestExample: {
-        nombreInsumo: "Caja",
-        descripcion: "Caja de cartón mediana"
+        nombreInsumo: "string",
+        descripcion: "string"
       },
       responseExample: {
         success: true,
-        message: "Insumo created successfully"
+        message: "Insumo created successfully",
+        data: {
+          idInsumo: 1,
+          nombreInsumo: "string",
+          descripcion: "string"
+        }
       }
     },
-
     {
       id: "delete-insumo",
       title: "Delete Insumo",
+      sdkMethod: "deleteInsumo",
       method: "DELETE",
       endpoint: "/insumos/:idInsumo",
       description: "Delete insumo.",
       protected: true,
       payloadType: "Params",
-      fields: [
-        { name: "idInsumo", type: "number", required: true }
-      ],
+      fields: [{ name: "idInsumo", type: "number", required: true }],
+      validations: ["idInsumo debe ser entero positivo"],
       requestExample: {
-        idInsumo: 3
+        idInsumo: 1
       },
       responseExample: {
         success: true,
-        message: "Insumo deleted successfully"
+        message: "Insumo deleted successfully",
+        data: {
+          idInsumo: 1,
+          nombreInsumo: "string",
+          descripcion: "string"
+        }
       }
     },
-
     {
       id: "create-client",
       title: "Create Client",
+      sdkMethod: "createClient",
       method: "POST",
       endpoint: "/clients",
       description: "Create client.",
@@ -238,41 +292,55 @@ const apiDocs = {
         { name: "telefono", type: "string", required: true },
         { name: "mail", type: "string", required: true }
       ],
+      validations: ["Email valido en mail"],
       requestExample: {
-        nombreCliente: "Juan Perez",
-        direccion: "Montevideo 123",
-        telefono: "099123456",
-        mail: "juan@mail.com"
+        nombreCliente: "string",
+        direccion: "string",
+        telefono: "string",
+        mail: "string"
       },
       responseExample: {
         success: true,
-        message: "Client created successfully"
+        message: "Client created successfully",
+        data: {
+          idCliente: 1,
+          nombreCliente: "string",
+          direccion: "string",
+          telefono: "string",
+          mail: "string"
+        }
       }
     },
-
     {
       id: "delete-client",
       title: "Delete Client",
+      sdkMethod: "deleteClient",
       method: "DELETE",
       endpoint: "/clients/:idCliente",
       description: "Delete client.",
       protected: true,
       payloadType: "Params",
-      fields: [
-        { name: "idCliente", type: "number", required: true }
-      ],
+      fields: [{ name: "idCliente", type: "number", required: true }],
+      validations: ["idCliente debe ser entero positivo"],
       requestExample: {
-        idCliente: 4
+        idCliente: 1
       },
       responseExample: {
         success: true,
-        message: "Client deleted successfully"
+        message: "Client deleted successfully",
+        data: {
+          idCliente: 1,
+          nombreCliente: "string",
+          direccion: "string",
+          telefono: "string",
+          mail: "string"
+        }
       }
     },
-
     {
       id: "create-sale",
       title: "Create Sale",
+      sdkMethod: "createSale",
       method: "POST",
       endpoint: "/sales",
       description: "Create sale.",
@@ -284,35 +352,53 @@ const apiDocs = {
         { name: "cantidad", type: "number", required: true },
         { name: "fecha", type: "string", required: true }
       ],
+      validations: [
+        "idCliente e idProducto deben ser enteros positivos",
+        "cantidad debe ser mayor a 0",
+        "fecha debe ser una fecha valida"
+      ],
       requestExample: {
         idCliente: 1,
-        idProducto: 2,
+        idProducto: 1,
         cantidad: 3,
         fecha: "2026-03-19"
       },
       responseExample: {
         success: true,
-        message: "Sale created successfully"
+        message: "Sale created successfully",
+        data: {
+          idVenta: 1,
+          idCliente: 1,
+          idProducto: 1,
+          cantidad: 3,
+          fecha: "2026-03-19T10:30:00Z"
+        }
       }
     },
-
     {
       id: "delete-sale",
       title: "Delete Sale",
+      sdkMethod: "deleteSale",
       method: "DELETE",
       endpoint: "/sales/:idVenta",
       description: "Delete sale.",
       protected: true,
       payloadType: "Params",
-      fields: [
-        { name: "idVenta", type: "number", required: true }
-      ],
+      fields: [{ name: "idVenta", type: "number", required: true }],
+      validations: ["idVenta debe ser entero positivo"],
       requestExample: {
-        idVenta: 5
+        idVenta: 1
       },
       responseExample: {
         success: true,
-        message: "Sale deleted successfully"
+        message: "Sale deleted successfully",
+        data: {
+          idVenta: 1,
+          idCliente: 1,
+          idProducto: 1,
+          cantidad: 3,
+          fecha: "2026-03-19T10:30:00Z"
+        }
       }
     }
   ]
@@ -384,6 +470,20 @@ function createHeadersSection(selectedMethod) {
   `;
 }
 
+function createValidationsSection(selectedMethod) {
+  const validations = selectedMethod.validations || [];
+  const validationsContent = validations.length
+    ? validations.map((rule) => `<li>${rule}</li>`).join("")
+    : `<p class="mb-0 text-muted">No additional validations documented.</p>`;
+
+  return `
+    <h5>Validations</h5>
+    <div class="info-box mb-4">
+      ${validations.length ? `<ul class="mb-0">${validationsContent}</ul>` : validationsContent}
+    </div>
+  `;
+}
+
 function renderMethodDetail(endpointId) {
   const selectedMethod = apiDocs.endpoints.find((item) => item.id === endpointId);
   const methodDetail = document.getElementById("method-detail");
@@ -401,6 +501,8 @@ function renderMethodDetail(endpointId) {
 
     <p><strong>Method:</strong> ${selectedMethod.method}</p>
     <p><strong>Endpoint:</strong> ${apiDocs.baseEndpoint}${selectedMethod.endpoint}</p>
+    <p><strong>Access:</strong> ${selectedMethod.protected ? "Protected (Bearer token required)" : "Public"}</p>
+    <p><strong>SDK Method:</strong> ${selectedMethod.sdkMethod}</p>
 
     ${createHeadersSection(selectedMethod)}
 
@@ -417,6 +519,8 @@ function renderMethodDetail(endpointId) {
         ${createFieldRows(selectedMethod.fields)}
       </tbody>
     </table>
+
+    ${createValidationsSection(selectedMethod)}
 
     <h5>Request Example</h5>
     <pre><code>${formatJSON(selectedMethod.requestExample)}</code></pre>
