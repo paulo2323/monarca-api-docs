@@ -1,5 +1,24 @@
+const API_BASE_URL_RAW =
+  (typeof process !== "undefined" &&
+    process.env &&
+    process.env.API_BASE_URL) ||
+  (typeof window !== "undefined" && window.API_BASE_URL) ||
+  "api.alfajoresmonarca-backoffice.com";
+
+function normalizeBaseUrl(url) {
+  if (!url) {
+    return "http://api.alfajoresmonarca-backoffice.com";
+  }
+
+  if (/^https?:\/\//i.test(url)) {
+    return url;
+  }
+
+  return `http://${url}`;
+}
+
 const apiDocs = {
-  baseEndpoint: "http://monarca-fullstack-zx2j51-513751-157-254-174-74.traefik.me",
+  baseEndpoint: normalizeBaseUrl(API_BASE_URL_RAW),
   endpoints: [
     {
       id: "register-user",
@@ -7,80 +26,155 @@ const apiDocs = {
       sdkMethod: "registerUser",
       method: "POST",
       endpoint: "/users/register",
-      description: "Register a new user.",
+      description: "Creates a new user.",
       protected: false,
-      payloadType: "Request Body",
+      payloadType: "Body",
       fields: [
         { name: "usuario", type: "string", required: true },
-        { name: "mail", type: "string", required: true },
+        { name: "mail", type: "string-email", required: true },
         { name: "password", type: "string", required: true },
         { name: "repeatPassword", type: "string", required: true }
       ],
       validations: [
-        "Email valido en mail",
-        "password y repeatPassword deben coincidir",
-        "usuario y mail deben ser unicos"
+        "mail must have valid email format",
+        "password and repeatPassword must match",
+        "usuario must be unique",
+        "mail must be unique",
+        "password is hashed and never returned"
       ],
       requestExample: {
-        usuario: "string",
-        mail: "string",
-        password: "string",
-        repeatPassword: "string"
+        usuario: "test1",
+        mail: "test1@mail.com",
+        password: "123456",
+        repeatPassword: "123456"
       },
       responseExample: {
         success: true,
         message: "User registered successfully",
         data: {
           idUsuario: 1,
-          usuario: "string",
-          mail: "string"
+          usuario: "test1",
+          mail: "test1@mail.com"
         }
       }
     },
     {
+      id: "list-users",
+      title: "List Users",
+      sdkMethod: "listUsers",
+      method: "GET",
+      endpoint: "/users",
+      description: "Returns all users.",
+      protected: true,
+      payloadType: "Query Params",
+      fields: [],
+      validations: [],
+      requestExample: {},
+      responseExample: {
+        success: true,
+        message: "Users fetched successfully",
+        data: [
+          {
+            idUsuario: 1,
+            usuario: "test1",
+            mail: "test1@mail.com"
+          }
+        ]
+      }
+    },
+    {
+      id: "get-user-by-id",
+      title: "Get User By Id",
+      sdkMethod: "getUserById",
+      method: "GET",
+      endpoint: "/users/:idUsuario",
+      description: "Returns one user by id.",
+      protected: true,
+      payloadType: "Path Params",
+      fields: [{ name: "idUsuario", type: "int", required: true }],
+      validations: ["idUsuario must be a positive integer"],
+      requestExample: {
+        idUsuario: 1
+      },
+      responseExample: {
+        success: true,
+        message: "User fetched successfully",
+        data: {
+          idUsuario: 1,
+          usuario: "test1",
+          mail: "test1@mail.com"
+        }
+      }
+    },
+    {
+      id: "delete-user",
+      title: "Delete User",
+      sdkMethod: "deleteUser",
+      method: "DELETE",
+      endpoint: "/users/:idUsuario",
+      description: "Deletes one user by id.",
+      protected: true,
+      payloadType: "Path Params",
+      fields: [{ name: "idUsuario", type: "int", required: true }],
+      validations: ["idUsuario must be a positive integer"],
+      requestExample: {
+        idUsuario: 1
+      },
+      responseExample: {
+        success: true,
+        message: "User deleted successfully",
+        data: {
+          idUsuario: 1,
+          usuario: "test1",
+          mail: "test1@mail.com"
+        }
+      }
+    },
+
+    {
       id: "login-user",
-      title: "Login User",
+      title: "Login",
       sdkMethod: "login",
       method: "POST",
       endpoint: "/auth/login",
-      description: "Login user and return JWT token.",
+      description: "Logs in a user and returns JWT token.",
       protected: false,
-      payloadType: "Request Body",
+      payloadType: "Body",
       fields: [
-        { name: "mail", type: "string", required: true },
+        { name: "mail", type: "string-email", required: true },
         { name: "password", type: "string", required: true }
       ],
-      validations: ["Email valido en mail"],
+      validations: [],
       requestExample: {
-        mail: "string",
-        password: "string"
+        mail: "test1@mail.com",
+        password: "123456"
       },
       responseExample: {
         success: true,
         message: "Login successful",
         data: {
-          token: "jwt",
+          token: "jwt_token_here",
           user: {
             idUsuario: 1,
-            usuario: "string",
-            mail: "string"
+            usuario: "test1",
+            mail: "test1@mail.com"
           }
         }
       }
     },
     {
       id: "request-reset",
-      title: "Request Password Reset",
+      title: "Request Reset Token",
       sdkMethod: "requestPasswordReset",
       method: "POST",
       endpoint: "/auth/request-reset",
-      description: "Request password reset link.",
+      description: "Generates reset token (simulated email flow).",
       protected: false,
-      payloadType: "Request Body",
-      fields: [{ name: "mail", type: "string", required: true }],
-      validations: ["Email valido en mail"],
+      payloadType: "Body",
+      fields: [{ name: "mail", type: "string-email", required: true }],
+      validations: ["mail must have valid email format"],
       requestExample: {
-        mail: "string"
+        mail: "test1@mail.com"
       },
       responseExample: {
         success: true,
@@ -96,9 +190,9 @@ const apiDocs = {
       sdkMethod: "resetPassword",
       method: "POST",
       endpoint: "/auth/reset-password",
-      description: "Reset user password.",
+      description: "Resets user password using token.",
       protected: false,
-      payloadType: "Request Body",
+      payloadType: "Body",
       fields: [
         { name: "idUsuario", type: "number", required: true },
         { name: "token", type: "string", required: true },
@@ -106,98 +200,153 @@ const apiDocs = {
         { name: "repeatPassword", type: "string", required: true }
       ],
       validations: [
-        "idUsuario debe ser entero positivo",
-        "newPassword y repeatPassword deben coincidir"
+        "passwords must match",
+        "token must be valid",
+        "new password is hashed before saving"
       ],
       requestExample: {
         idUsuario: 1,
-        token: "string",
-        newPassword: "string",
-        repeatPassword: "string"
+        token: "token_here",
+        newPassword: "new123456",
+        repeatPassword: "new123456"
       },
       responseExample: {
         success: true,
         message: "Password reset successfully",
         data: {
           idUsuario: 1,
-          usuario: "string",
-          mail: "string"
+          usuario: "test1",
+          mail: "test1@mail.com"
         }
       }
     },
-    {
-      id: "get-user-by-id",
-      title: "Get User By ID",
-      sdkMethod: "getUserById",
-      method: "GET",
-      endpoint: "/users/:idUsuario",
-      description: "Get user by ID.",
-      protected: true,
-      payloadType: "Params",
-      fields: [{ name: "idUsuario", type: "number", required: true }],
-      validations: ["idUsuario debe ser entero positivo"],
-      requestExample: {
-        idUsuario: 1
-      },
-      responseExample: {
-        success: true,
-        message: "User fetched successfully",
-        data: {
-          idUsuario: 1,
-          usuario: "string",
-          mail: "string"
-        }
-      }
-    },
-    {
-      id: "delete-user",
-      title: "Delete User",
-      sdkMethod: "deleteUser",
-      method: "DELETE",
-      endpoint: "/users/:idUsuario",
-      description: "Delete user.",
-      protected: true,
-      payloadType: "Params",
-      fields: [{ name: "idUsuario", type: "number", required: true }],
-      validations: ["idUsuario debe ser entero positivo"],
-      requestExample: {
-        idUsuario: 1
-      },
-      responseExample: {
-        success: true,
-        message: "User deleted successfully",
-        data: {
-          idUsuario: 1,
-          usuario: "string",
-          mail: "string"
-        }
-      }
-    },
+
     {
       id: "create-product",
       title: "Create Product",
       sdkMethod: "createProduct",
       method: "POST",
       endpoint: "/products",
-      description: "Create product.",
+      description: "Creates a product.",
       protected: true,
-      payloadType: "Request Body",
+      payloadType: "Body",
       fields: [
         { name: "nombreProducto", type: "string", required: true },
         { name: "descripcion", type: "string", required: true }
       ],
       validations: [],
       requestExample: {
-        nombreProducto: "string",
-        descripcion: "string"
+        nombreProducto: "Alfajor",
+        descripcion: "Caja x12"
       },
       responseExample: {
         success: true,
         message: "Product created successfully",
         data: {
           idProducto: 1,
-          nombreProducto: "string",
-          descripcion: "string"
+          nombreProducto: "Alfajor",
+          descripcion: "Caja x12"
+        }
+      }
+    },
+    {
+      id: "list-products",
+      title: "List Products",
+      sdkMethod: "listProducts",
+      method: "GET",
+      endpoint: "/products",
+      description: "Returns all products.",
+      protected: true,
+      payloadType: "Query Params",
+      fields: [],
+      validations: [],
+      requestExample: {},
+      responseExample: {
+        success: true,
+        message: "Products retrieved successfully",
+        data: [
+          {
+            idProducto: 1,
+            nombreProducto: "Alfajor",
+            descripcion: "Caja x12"
+          }
+        ]
+      }
+    },
+    {
+      id: "list-products-stock",
+      title: "List Product Stock",
+      sdkMethod: "listProductStock",
+      method: "GET",
+      endpoint: "/products/stock",
+      description: "Returns stock for all products.",
+      protected: true,
+      payloadType: "Query Params",
+      fields: [],
+      validations: [
+        "Data source: stockProducto",
+        "Returns idProducto, nombreProducto, descripcion, cantidad"
+      ],
+      requestExample: {},
+      responseExample: {
+        success: true,
+        message: "Product stock retrieved successfully",
+        data: [
+          {
+            idProducto: 1,
+            nombreProducto: "Alfajor",
+            descripcion: "Caja x12",
+            cantidad: 12
+          }
+        ]
+      }
+    },
+    {
+      id: "get-product-stock-by-id",
+      title: "Get Product Stock By Id",
+      sdkMethod: "getProductStockById",
+      method: "GET",
+      endpoint: "/products/stock/:idProducto",
+      description: "Returns stock for one product.",
+      protected: true,
+      payloadType: "Path Params",
+      fields: [{ name: "idProducto", type: "int", required: true }],
+      validations: ["idProducto must be a positive integer"],
+      requestExample: {
+        idProducto: 1
+      },
+      responseExample: {
+        success: true,
+        message: "Product stock retrieved successfully",
+        data: {
+          idProducto: 1,
+          nombreProducto: "Alfajor",
+          descripcion: "Caja x12",
+          cantidad: 12
+        }
+      }
+    },
+    {
+      id: "get-product-by-id",
+      title: "Get Product By Id",
+      sdkMethod: "getProductById",
+      method: "GET",
+      endpoint: "/products/:idProducto",
+      description: "Returns one product by id.",
+      protected: true,
+      payloadType: "Path Params",
+      fields: [{ name: "idProducto", type: "int", required: true }],
+      validations: ["idProducto must be a positive integer"],
+      requestExample: {
+        idProducto: 1
+      },
+      responseExample: {
+        success: true,
+        message: "Product retrieved successfully",
+        data: {
+          idProducto: 1,
+          nombreProducto: "Alfajor",
+          descripcion: "Caja x12"
         }
       }
     },
@@ -207,11 +356,11 @@ const apiDocs = {
       sdkMethod: "deleteProduct",
       method: "DELETE",
       endpoint: "/products/:idProducto",
-      description: "Delete product.",
+      description: "Deletes one product by id.",
       protected: true,
-      payloadType: "Params",
-      fields: [{ name: "idProducto", type: "number", required: true }],
-      validations: ["idProducto debe ser entero positivo"],
+      payloadType: "Path Params",
+      fields: [{ name: "idProducto", type: "int", required: true }],
+      validations: ["idProducto must be a positive integer"],
       requestExample: {
         idProducto: 1
       },
@@ -220,36 +369,85 @@ const apiDocs = {
         message: "Product deleted successfully",
         data: {
           idProducto: 1,
-          nombreProducto: "string",
-          descripcion: "string"
+          nombreProducto: "Alfajor",
+          descripcion: "Caja x12"
         }
       }
     },
+
     {
       id: "create-insumo",
       title: "Create Insumo",
       sdkMethod: "createInsumo",
       method: "POST",
       endpoint: "/insumos",
-      description: "Create insumo.",
+      description: "Creates an insumo.",
       protected: true,
-      payloadType: "Request Body",
+      payloadType: "Body",
       fields: [
         { name: "nombreInsumo", type: "string", required: true },
         { name: "descripcion", type: "string", required: true }
       ],
       validations: [],
       requestExample: {
-        nombreInsumo: "string",
-        descripcion: "string"
+        nombreInsumo: "Dulce de leche",
+        descripcion: "Balde 5kg"
       },
       responseExample: {
         success: true,
         message: "Insumo created successfully",
         data: {
           idInsumo: 1,
-          nombreInsumo: "string",
-          descripcion: "string"
+          nombreInsumo: "Dulce de leche",
+          descripcion: "Balde 5kg"
+        }
+      }
+    },
+    {
+      id: "list-insumos",
+      title: "List Insumos",
+      sdkMethod: "listInsumos",
+      method: "GET",
+      endpoint: "/insumos",
+      description: "Returns all insumos.",
+      protected: true,
+      payloadType: "Query Params",
+      fields: [],
+      validations: [],
+      requestExample: {},
+      responseExample: {
+        success: true,
+        message: "Insumos retrieved successfully",
+        data: [
+          {
+            idInsumo: 1,
+            nombreInsumo: "Dulce de leche",
+            descripcion: "Balde 5kg"
+          }
+        ]
+      }
+    },
+    {
+      id: "get-insumo-by-id",
+      title: "Get Insumo By Id",
+      sdkMethod: "getInsumoById",
+      method: "GET",
+      endpoint: "/insumos/:idInsumo",
+      description: "Returns one insumo by id.",
+      protected: true,
+      payloadType: "Path Params",
+      fields: [{ name: "idInsumo", type: "int", required: true }],
+      validations: ["idInsumo must be a positive integer"],
+      requestExample: {
+        idInsumo: 1
+      },
+      responseExample: {
+        success: true,
+        message: "Insumo retrieved successfully",
+        data: {
+          idInsumo: 1,
+          nombreInsumo: "Dulce de leche",
+          descripcion: "Balde 5kg"
         }
       }
     },
@@ -259,11 +457,11 @@ const apiDocs = {
       sdkMethod: "deleteInsumo",
       method: "DELETE",
       endpoint: "/insumos/:idInsumo",
-      description: "Delete insumo.",
+      description: "Deletes one insumo by id.",
       protected: true,
-      payloadType: "Params",
-      fields: [{ name: "idInsumo", type: "number", required: true }],
-      validations: ["idInsumo debe ser entero positivo"],
+      payloadType: "Path Params",
+      fields: [{ name: "idInsumo", type: "int", required: true }],
+      validations: ["idInsumo must be a positive integer"],
       requestExample: {
         idInsumo: 1
       },
@@ -272,42 +470,119 @@ const apiDocs = {
         message: "Insumo deleted successfully",
         data: {
           idInsumo: 1,
-          nombreInsumo: "string",
-          descripcion: "string"
+          nombreInsumo: "Dulce de leche",
+          descripcion: "Balde 5kg"
         }
       }
     },
+
     {
       id: "create-client",
       title: "Create Client",
       sdkMethod: "createClient",
       method: "POST",
       endpoint: "/clients",
-      description: "Create client.",
+      description: "Creates a client.",
       protected: true,
-      payloadType: "Request Body",
+      payloadType: "Body",
       fields: [
         { name: "nombreCliente", type: "string", required: true },
-        { name: "direccion", type: "string", required: true },
+        { name: "calle1", type: "string", required: true },
+        { name: "calle2", type: "string", required: false },
+        { name: "numeroPuerta", type: "string", required: true },
+        { name: "codigoPostal", type: "string", required: false },
+        { name: "ciudad", type: "string", required: true },
         { name: "telefono", type: "string", required: true },
-        { name: "mail", type: "string", required: true }
+        { name: "mail", type: "string-email", required: false }
       ],
-      validations: ["Email valido en mail"],
+      validations: [
+        "Required: nombreCliente, calle1, numeroPuerta, ciudad, telefono",
+        "Optional: calle2, codigoPostal, mail",
+        "if mail is present, must have valid format"
+      ],
       requestExample: {
-        nombreCliente: "string",
-        direccion: "string",
-        telefono: "string",
-        mail: "string"
+        nombreCliente: "Cliente Test",
+        calle1: "18 de Julio",
+        calle2: "Yaguaron",
+        numeroPuerta: "1234",
+        codigoPostal: "11200",
+        ciudad: "Montevideo",
+        telefono: "099123456",
+        mail: "cliente@test.com"
       },
       responseExample: {
         success: true,
         message: "Client created successfully",
         data: {
           idCliente: 1,
-          nombreCliente: "string",
-          direccion: "string",
-          telefono: "string",
-          mail: "string"
+          nombreCliente: "Cliente Test",
+          calle1: "18 de Julio",
+          calle2: "Yaguaron",
+          numeroPuerta: "1234",
+          codigoPostal: "11200",
+          ciudad: "Montevideo",
+          telefono: "099123456",
+          mail: "cliente@test.com"
+        }
+      }
+    },
+    {
+      id: "list-clients",
+      title: "List Clients",
+      sdkMethod: "listClients",
+      method: "GET",
+      endpoint: "/clients",
+      description: "Returns all clients.",
+      protected: true,
+      payloadType: "Query Params",
+      fields: [],
+      validations: [],
+      requestExample: {},
+      responseExample: {
+        success: true,
+        message: "Clients retrieved successfully",
+        data: [
+          {
+            idCliente: 1,
+            nombreCliente: "Cliente Test",
+            calle1: "18 de Julio",
+            calle2: "Yaguaron",
+            numeroPuerta: "1234",
+            codigoPostal: "11200",
+            ciudad: "Montevideo",
+            telefono: "099123456",
+            mail: "cliente@test.com"
+          }
+        ]
+      }
+    },
+    {
+      id: "get-client-by-id",
+      title: "Get Client By Id",
+      sdkMethod: "getClientById",
+      method: "GET",
+      endpoint: "/clients/:idCliente",
+      description: "Returns one client by id.",
+      protected: true,
+      payloadType: "Path Params",
+      fields: [{ name: "idCliente", type: "int", required: true }],
+      validations: ["idCliente must be a positive integer"],
+      requestExample: {
+        idCliente: 1
+      },
+      responseExample: {
+        success: true,
+        message: "Client retrieved successfully",
+        data: {
+          idCliente: 1,
+          nombreCliente: "Cliente Test",
+          calle1: "18 de Julio",
+          calle2: "Yaguaron",
+          numeroPuerta: "1234",
+          codigoPostal: "11200",
+          ciudad: "Montevideo",
+          telefono: "099123456",
+          mail: "cliente@test.com"
         }
       }
     },
@@ -317,11 +592,11 @@ const apiDocs = {
       sdkMethod: "deleteClient",
       method: "DELETE",
       endpoint: "/clients/:idCliente",
-      description: "Delete client.",
+      description: "Deletes one client by id.",
       protected: true,
-      payloadType: "Params",
-      fields: [{ name: "idCliente", type: "number", required: true }],
-      validations: ["idCliente debe ser entero positivo"],
+      payloadType: "Path Params",
+      fields: [{ name: "idCliente", type: "int", required: true }],
+      validations: ["idCliente must be a positive integer"],
       requestExample: {
         idCliente: 1
       },
@@ -330,38 +605,45 @@ const apiDocs = {
         message: "Client deleted successfully",
         data: {
           idCliente: 1,
-          nombreCliente: "string",
-          direccion: "string",
-          telefono: "string",
-          mail: "string"
+          nombreCliente: "Cliente Test",
+          calle1: "18 de Julio",
+          calle2: "Yaguaron",
+          numeroPuerta: "1234",
+          codigoPostal: "11200",
+          ciudad: "Montevideo",
+          telefono: "099123456",
+          mail: "cliente@test.com"
         }
       }
     },
+
     {
       id: "create-sale",
       title: "Create Sale",
       sdkMethod: "createSale",
       method: "POST",
       endpoint: "/sales",
-      description: "Create sale.",
+      description: "Creates a sale.",
       protected: true,
-      payloadType: "Request Body",
+      payloadType: "Body",
       fields: [
         { name: "idCliente", type: "number", required: true },
         { name: "idProducto", type: "number", required: true },
         { name: "cantidad", type: "number", required: true },
-        { name: "fecha", type: "string", required: true }
+        { name: "fecha", type: "YYYY-MM-DD", required: true }
       ],
       validations: [
-        "idCliente e idProducto deben ser enteros positivos",
-        "cantidad debe ser mayor a 0",
-        "fecha debe ser una fecha valida"
+        "cantidad must be > 0",
+        "client must exist",
+        "product must exist",
+        "product must have enough stock",
+        "stockProducto is decreased on successful sale"
       ],
       requestExample: {
         idCliente: 1,
         idProducto: 1,
-        cantidad: 3,
-        fecha: "2026-03-19"
+        cantidad: 2,
+        fecha: "2026-03-20"
       },
       responseExample: {
         success: true,
@@ -370,9 +652,86 @@ const apiDocs = {
           idVenta: 1,
           idCliente: 1,
           idProducto: 1,
-          cantidad: 3,
-          fecha: "2026-03-19T10:30:00Z"
+          cantidad: 2,
+          fecha: "2026-03-20"
         }
+      },
+      errorExample: {
+        success: false,
+        message: "Insufficient stock. Available: 3"
+      }
+    },
+    {
+      id: "list-sales",
+      title: "List Sales",
+      sdkMethod: "listSales",
+      method: "GET",
+      endpoint: "/sales",
+      description: "Returns sales list with optional filters.",
+      protected: true,
+      payloadType: "Query Params",
+      fields: [
+        { name: "idCliente", type: "number", required: false },
+        { name: "idProducto", type: "number", required: false },
+        { name: "ciudad", type: "string", required: false },
+        { name: "cantidadMin", type: "number", required: false },
+        { name: "cantidadMax", type: "number", required: false },
+        { name: "fechaDesde", type: "YYYY-MM-DD", required: false },
+        { name: "fechaHasta", type: "YYYY-MM-DD", required: false }
+      ],
+      validations: [],
+      requestExample: {
+        idCliente: 1,
+        ciudad: "Montevideo",
+        fechaDesde: "2026-03-01",
+        fechaHasta: "2026-03-31"
+      },
+      responseExample: {
+        success: true,
+        message: "Sales fetched successfully",
+        data: [
+          {
+            idVenta: 1,
+            idCliente: 1,
+            nombreCliente: "Cliente Test",
+            ciudad: "Montevideo",
+            idProducto: 1,
+            nombreProducto: "Alfajor",
+            cantidad: 2,
+            fecha: "2026-03-20"
+          }
+        ]
+      }
+    },
+    {
+      id: "list-sales-by-client",
+      title: "List Sales By Client",
+      sdkMethod: "listSalesByClient",
+      method: "GET",
+      endpoint: "/sales/client/:idCliente",
+      description: "Returns sales for one client id.",
+      protected: true,
+      payloadType: "Path Params",
+      fields: [{ name: "idCliente", type: "int", required: true }],
+      validations: ["idCliente must be a positive integer"],
+      requestExample: {
+        idCliente: 1
+      },
+      responseExample: {
+        success: true,
+        message: "Sales fetched successfully",
+        data: [
+          {
+            idVenta: 1,
+            idCliente: 1,
+            nombreCliente: "Cliente Test",
+            ciudad: "Montevideo",
+            idProducto: 1,
+            nombreProducto: "Alfajor",
+            cantidad: 2,
+            fecha: "2026-03-20"
+          }
+        ]
       }
     },
     {
@@ -381,11 +740,11 @@ const apiDocs = {
       sdkMethod: "deleteSale",
       method: "DELETE",
       endpoint: "/sales/:idVenta",
-      description: "Delete sale.",
+      description: "Deletes one sale by id.",
       protected: true,
-      payloadType: "Params",
-      fields: [{ name: "idVenta", type: "number", required: true }],
-      validations: ["idVenta debe ser entero positivo"],
+      payloadType: "Path Params",
+      fields: [{ name: "idVenta", type: "int", required: true }],
+      validations: ["idVenta must be a positive integer"],
       requestExample: {
         idVenta: 1
       },
@@ -396,8 +755,8 @@ const apiDocs = {
           idVenta: 1,
           idCliente: 1,
           idProducto: 1,
-          cantidad: 3,
-          fecha: "2026-03-19T10:30:00Z"
+          cantidad: 2,
+          fecha: "2026-03-20"
         }
       }
     }
@@ -408,19 +767,49 @@ function formatJSON(obj) {
   return JSON.stringify(obj, null, 2);
 }
 
+function getPathGroup(endpointPath) {
+  const parts = endpointPath.split("/").filter(Boolean);
+  return parts.length ? `/${parts[0]}` : "/";
+}
+
 function createSidebarMenu() {
   const sidebarNav = document.getElementById("sidebar-nav");
+  const firstEndpointId = apiDocs.endpoints[0]?.id;
 
-  sidebarNav.innerHTML = apiDocs.endpoints
-    .map((item, index) => {
+  const groupedEndpoints = apiDocs.endpoints.reduce((acc, item) => {
+    const groupKey = getPathGroup(item.endpoint);
+
+    if (!acc[groupKey]) {
+      acc[groupKey] = [];
+    }
+
+    acc[groupKey].push(item);
+    return acc;
+  }, {});
+
+  const groupOrder = Object.keys(groupedEndpoints);
+
+  sidebarNav.innerHTML = groupOrder
+    .map((groupKey) => {
+      const groupItems = groupedEndpoints[groupKey]
+        .map((item) => {
+          return `
+            <button class="sidebar-item ${item.id === firstEndpointId ? "active" : ""}" data-id="${item.id}">
+              <div class="sidebar-item-header">
+                <span class="method-badge method-${item.method}">${item.method}</span>
+                <p class="sidebar-item-title">${item.title}</p>
+              </div>
+              <div class="sidebar-item-endpoint">${item.endpoint}</div>
+            </button>
+          `;
+        })
+        .join("");
+
       return `
-        <button class="sidebar-item ${index === 0 ? "active" : ""}" data-id="${item.id}">
-          <div class="sidebar-item-header">
-            <span class="method-badge method-${item.method}">${item.method}</span>
-            <p class="sidebar-item-title">${item.title}</p>
-          </div>
-          <div class="sidebar-item-endpoint">${item.endpoint}</div>
-        </button>
+        <div>
+          <span class="sidebar-label">${groupKey}</span>
+          ${groupItems}
+        </div>
       `;
     })
     .join("");
@@ -484,6 +873,17 @@ function createValidationsSection(selectedMethod) {
   `;
 }
 
+function createErrorExampleSection(selectedMethod) {
+  if (!selectedMethod.errorExample) {
+    return "";
+  }
+
+  return `
+    <h5>Error Example</h5>
+    <pre><code>${formatJSON(selectedMethod.errorExample)}</code></pre>
+  `;
+}
+
 function renderMethodDetail(endpointId) {
   const selectedMethod = apiDocs.endpoints.find((item) => item.id === endpointId);
   const methodDetail = document.getElementById("method-detail");
@@ -493,7 +893,8 @@ function renderMethodDetail(endpointId) {
     return;
   }
 
-  const payloadTitle = selectedMethod.payloadType || "Request Fields";
+  const payloadTitle = selectedMethod.payloadType || "Parameters";
+  const hasFields = selectedMethod.fields && selectedMethod.fields.length > 0;
 
   methodDetail.innerHTML = `
     <h3>${selectedMethod.title}</h3>
@@ -507,6 +908,9 @@ function renderMethodDetail(endpointId) {
     ${createHeadersSection(selectedMethod)}
 
     <h5>${payloadTitle}</h5>
+    ${
+      hasFields
+        ? `
     <table class="table">
       <thead>
         <tr>
@@ -519,6 +923,9 @@ function renderMethodDetail(endpointId) {
         ${createFieldRows(selectedMethod.fields)}
       </tbody>
     </table>
+    `
+        : `<p class="text-muted">No parameters required.</p>`
+    }
 
     ${createValidationsSection(selectedMethod)}
 
@@ -527,6 +934,12 @@ function renderMethodDetail(endpointId) {
 
     <h5>Response Example</h5>
     <pre><code>${formatJSON(selectedMethod.responseExample)}</code></pre>
+
+    ${createErrorExampleSection(selectedMethod)}
+
+    <div class="note-box">
+      <strong>Common status codes:</strong> 200, 201, 400, 401, 404, 409, 500.
+    </div>
   `;
 }
 
